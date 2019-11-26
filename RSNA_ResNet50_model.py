@@ -7,14 +7,6 @@
 # 
 # 
 
-# In[ ]:
-
-
-
-
-
-# In[1]:
-
 
 import numpy as np
 import pandas as pd
@@ -40,18 +32,12 @@ from sklearn.model_selection import ShuffleSplit
 
 # ### Model Parameters Setup
 
-# In[24]:
-
-
 # Paths 
 Path = '../input/rsna-intracranial-hemorrhage-detection/rsna-intracranial-hemorrhage-detection/'
 train_img_path = Path + 'stage_2_train/'
 test_img_path = Path + 'stage_2_test/'
 sample_csv = Path + "stage_2_sample_submission.csv"
 train_csv = Path + 'stage_2_train.csv'
-
-
-# In[25]:
 
 
 def read_testset(filename):
@@ -88,23 +74,7 @@ test_df = read_testset(sample_csv)
 train_df = read_trainset(train_csv)
 
 
-# In[26]:
-
-
-test_df.head()
-
-
-# In[27]:
-
-
-train_df.head()
-
-
 # ### Data EDA and Cleaning
-# 
-
-# In[4]:
-
 
 def correct_dcm(dcm):
     x = dcm.pixel_array + 1000
@@ -138,15 +108,6 @@ def bsb_window(dcm):
     return bsb_img
 
 
-# In[ ]:
-
-
-
-
-
-# In[5]:
-
-
 def window_with_correction(dcm, window_center, window_width):
     if (dcm.BitsStored == 12) and (dcm.PixelRepresentation == 0) and (int(dcm.RescaleIntercept) > -100):
         correct_dcm(dcm)
@@ -176,9 +137,6 @@ def window_testing(img, window):
     return bsb_img
 
 
-# In[31]:
-
-
 # example of a "bad data point" (i.e. (dcm.BitsStored == 12) and (dcm.PixelRepresentation == 0) and (int(dcm.RescaleIntercept) > -100) == True)
 example_img = train_img_path + train_df.index[102] + ".dcm"
 
@@ -193,8 +151,6 @@ ax[1].set_title("corrected");
 
 
 # ### Load Data
-
-# In[6]:
 
 
 def _read(path, desired_size):
@@ -217,8 +173,6 @@ def _read(path, desired_size):
 # 
 # Inherits from keras.utils.Sequence object and thus should be safe for multiprocessing.
 # 
-
-# In[7]:
 
 
 class DataGenerator(keras.utils.Sequence):
@@ -279,9 +233,6 @@ class DataGenerator(keras.utils.Sequence):
 
 
 # ### Metrics
-
-# In[8]:
-
 
 from keras import backend as K
 
@@ -363,9 +314,6 @@ def weighted_log_loss_metric(trues, preds):
 # ###  Model
 # 
 # 
-
-# In[34]:
-
 
 
 class PredictionCheckpoint(keras.callbacks.Callback):
@@ -459,8 +407,6 @@ class ResNet50_Model:
 # 
 # 
 
-# In[ ]:
-
 
 # Train/Valid/Test Split
 train_df_ss = ShuffleSplit(n_splits=10, test_size=0.1, random_state=42).split(train_df.index)
@@ -478,34 +424,17 @@ history = model.fit_and_predict(train_df.iloc[train_idx], train_df.iloc[valid_id
 
 # ### Ensemble and average all submission_predictions.
 
-# In[ ]:
-
-
 test_df.iloc[:, :] = np.average(history.test_predictions, axis=0, weights=[0, 1, 2, 4, 6]) # let's do a weighted average for epochs (>1)
-
 test_df = test_df.stack().reset_index()
-
 test_df.insert(loc=0, column='ID', value=test_df['Image'].astype(str) + "_" + test_df['Diagnosis'])
-
 test_df = test_df.drop(["Image", "Diagnosis"], axis=1)
-
 test_df.to_csv('submission.csv', index=False)
-
-
-# In[ ]:
 
 
 from IPython.display import FileLink, FileLinks
 FileLink('submission.csv')
 
 
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 
