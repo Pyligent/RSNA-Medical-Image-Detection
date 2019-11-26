@@ -7,26 +7,13 @@
 # **Due to GPU quota is only 30 hours/per week on Kaggle, each training need 15+ hours, so the notebook cann't commiting(otherwise will exceeding the quota), only download the csv files to submit**
 # 
 # 
-# 
-
-# In[ ]:
-
+#
 
 # Install EfficentNet 
 get_ipython().system('pip install efficientnet')
 get_ipython().system('pip install iterative-stratification')
-
-
-# In[ ]:
-
-
-
 import efficientnet.keras as efn 
 from iterstrat.ml_stratifiers import MultilabelStratifiedShuffleSplit
-
-
-# In[ ]:
-
 
 import numpy as np
 import pandas as pd
@@ -59,9 +46,6 @@ from keras.optimizers import Adam
 
 # ### Model Parameters Setup
 
-# In[ ]:
-
-
 # Setting the parameters:
 seed = 42
 np.random.seed(seed)
@@ -87,12 +71,6 @@ test_img_path = path + 'stage_2_test/'
 train_dataset_fns = path + 'stage_2_train.csv'
 test_dataset_fns = path + 'stage_2_sample_submission.csv'
 
-
-
-
-# In[ ]:
-
-
 dup_image_list = [56346, 56347, 56348, 56349,
                             56350, 56351, 1171830, 1171831,
                             1171832, 1171833, 1171834, 1171835,
@@ -102,9 +80,6 @@ dup_image_list = [56346, 56347, 56348, 56349,
 
 
 # ### load the dataset
-
-# In[ ]:
-
 
 def train_dataset_loader(filename):
     df = pd.read_csv(filename)
@@ -125,30 +100,10 @@ def test_dataset_loader(filename):
     df = df.set_index(['Image', 'Diagnosis']).unstack(level=-1)
     return df
 
-
-
-# In[ ]:
-
-
 train_df = train_dataset_loader(train_dataset_fns)
 test_df = test_dataset_loader(test_dataset_fns)
 
-
-# In[ ]:
-
-
-train_df.head()
-
-
-# In[ ]:
-
-
-test_df.head()
-
-
 # ### Data EDA and Cleaning
-
-# In[ ]:
 
 
 def correct_dcm(dcm):
@@ -189,9 +144,6 @@ def _read(path, SHAPE):
     except:
         img = np.zeros(SHAPE)
     return img
-
-
-# In[ ]:
 
 
 def window_with_correction(dcm, window_center, window_width):
@@ -236,9 +188,6 @@ ax[1].set_title("corrected");
 
 
 # ### Random image augmentation
-
-# In[ ]:
-
 
 # Image Augmentation
 sometimes = lambda aug: iaa.Sometimes(0.25, aug)
@@ -331,9 +280,6 @@ class DataGenerator_Test(keras.utils.Sequence):
 
 # - oversample the minority class 'epidural' 
 
-# In[ ]:
-
-
 # Oversampling
 epidural_df = train_df[train_df.Label['epidural'] == 1]
 train_oversample_df = pd.concat([train_df, epidural_df])
@@ -345,9 +291,6 @@ print('Test Shape: {}'.format(test_df.shape))
 
 
 # ### EfficientNet model
-
-# In[ ]:
-
 
 def predictions(test_df, model):    
     test_preds = model.predict_generator(DataGenerator_Test(test_df, None, 5, input_image_shape, test_img_path), verbose = 1)
@@ -376,8 +319,6 @@ def create_model():
 
 # ### Multi-Labels Train/Valid Dataset Split
 
-# In[ ]:
-
 
 # Submission Placeholder
 submission_predictions = []
@@ -391,11 +332,6 @@ Y = train_df.Label.values
 Multi_Stratified_splits = next(Multi_Stratified_split.split(X, Y))
 train_idx = Multi_Stratified_splits[0]
 valid_idx = Multi_Stratified_splits[1]
-
-
-# 
-
-# In[ ]:
 
 
 # Loop through Folds of Multi Label Stratified Split
@@ -453,8 +389,6 @@ for epoch in range(0, 4):
 
 # ### Ensemble and average all submission_predictions.
 
-# In[ ]:
-
 
 test_df.iloc[:, :] = np.average(submission_predictions, axis = 0, weights = [2**i for i in range(len(submission_predictions))])
 test_df = test_df.stack().reset_index()
@@ -462,9 +396,6 @@ test_df.insert(loc = 0, column = 'ID', value = test_df['Image'].astype(str) + "_
 test_df = test_df.drop(["Image", "Diagnosis"], axis=1)
 test_df.to_csv('submission.csv', index = False)
 print(test_df.head(12))
-
-
-# In[ ]:
 
 
 from IPython.display import FileLink, FileLinks
